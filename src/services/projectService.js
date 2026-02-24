@@ -63,11 +63,14 @@ async function addTeamMember(projectId, memberEmail, userId, userRole) {
   const member = await User.findOne({ email: memberEmail });
   if (!member) throw new AppError('User with this email not found', 404);
 
-  if (project.teamMembers.includes(member._id))
+  if (project.teamMembers.some((teamMemberId) => teamMemberId.toString() === member._id.toString()))
     throw new AppError('User is already a team member', 400);
 
-  project.teamMembers.push(member._id);
-  await project.save();
+  await Project.findByIdAndUpdate(
+    projectId,
+    { $addToSet: { teamMembers: member._id } },
+    { new: true, runValidators: true }
+  );
 
   return await Project.findById(projectId)
     .populate('createdBy', 'name email')
