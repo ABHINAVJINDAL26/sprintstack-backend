@@ -65,11 +65,10 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-taskSchema.pre('save', function (next) {
+taskSchema.pre('save', function () {
   if (this.isModified('status')) {
     this.statusUpdatedAt = new Date();
   }
-  next();
 });
 
 module.exports = mongoose.model('Task', taskSchema);

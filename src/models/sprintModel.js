@@ -36,11 +36,10 @@ const sprintSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-sprintSchema.pre('save', function (next) {
+sprintSchema.pre('save', function () {
   if (this.endDate <= this.startDate) {
-    return next(new Error('End date must be after start date'));
+    throw new Error('End date must be after start date');
   }
-  next();
 });
 
 module.exports = mongoose.model('Sprint', sprintSchema);
