@@ -1,28 +1,24 @@
+const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
 const AppError = require('../utils/appError');
-const { verifyAccessToken } = require('../utils/token');
 
-function authenticate(req, _res, next) {
+const protect = async (req, res, next) => {
   try {
-    const header = req.headers.authorization || '';
-    const [scheme, token] = header.split(' ');
-
-    if (scheme !== 'Bearer' || !token) {
-      throw new AppError('Unauthorized', 401);
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
     }
+    if (!token) return next(new AppError('Not authorized. No token provided.', 401));
 
-    const payload = verifyAccessToken(token);
-    req.user = {
-      id: payload.sub,
-      role: payload.role,
-      email: payload.email
-    };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) return next(new AppError('User not found. Token invalid.', 401));
 
-    return next();
-  } catch (_error) {
-    return next(new AppError('Invalid or expired token', 401));
+    req.user = user;
+    next();
+  } catch (err) {
+    return next(new AppError('Not authorized. Token invalid or expired.', 401));
   }
-}
-
-module.exports = {
-  authenticate
 };
+
+module.exports = { protect };

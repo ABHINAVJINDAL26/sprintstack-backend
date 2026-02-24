@@ -1,33 +1,22 @@
 const express = require('express');
-const { body } = require('express-validator');
-const authController = require('../controllers/authController');
-const validateRequest = require('../middlewares/validateRequest');
-const { authenticate } = require('../middlewares/authMiddleware');
-
 const router = express.Router();
+const { body } = require('express-validator');
+const { register, login, getProfile } = require('../controllers/authController');
+const { protect } = require('../middlewares/authMiddleware');
+const { validateRequest } = require('../middlewares/validateRequest');
 
-router.post(
-  '/register',
-  [
-    body('name').trim().notEmpty().withMessage('Name is required'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('role').isIn(['admin', 'manager', 'developer', 'qa']).withMessage('Invalid role')
-  ],
-  validateRequest,
-  authController.register
-);
+router.post('/register', [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('role').optional().isIn(['admin', 'manager', 'developer', 'qa']).withMessage('Invalid role'),
+], validateRequest, register);
 
-router.post(
-  '/login',
-  [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password').notEmpty().withMessage('Password is required')
-  ],
-  validateRequest,
-  authController.login
-);
+router.post('/login', [
+  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').notEmpty().withMessage('Password is required'),
+], validateRequest, login);
 
-router.get('/profile', authenticate, authController.profile);
+router.get('/profile', protect, getProfile);
 
 module.exports = router;
