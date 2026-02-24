@@ -1,44 +1,49 @@
-const { randomUUID } = require('node:crypto');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const users = [];
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      maxlength: [50, 'Name cannot exceed 50 characters'],
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [6, 'Password must be at least 6 characters'],
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'manager', 'developer', 'qa'],
+      default: 'developer',
+    },
+    organization: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Organization cannot exceed 100 characters'],
+    },
+  },
+  { timestamps: true }
+);
 
-function toPublicUser(user) {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    organization: user.organization,
-    createdAt: user.createdAt
-  };
-}
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
+  this.password = await bcrypt.hash(this.password, 12);
+});
 
-function findByEmail(email) {
-  return users.find((user) => user.email.toLowerCase() === email.toLowerCase()) || null;
-}
-
-function findById(id) {
-  return users.find((user) => user.id === id) || null;
-}
-
-function createUser(payload) {
-  const user = {
-    id: randomUUID(),
-    name: payload.name,
-    email: payload.email,
-    password: payload.password,
-    role: payload.role,
-    organization: payload.organization || '',
-    createdAt: new Date().toISOString()
-  };
-
-  users.push(user);
-  return user;
-}
-
-module.exports = {
-  findByEmail,
-  findById,
-  createUser,
-  toPublicUser
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
 };
+
+module.exports = mongoose.model('User', userSchema);
