@@ -22,4 +22,11 @@ async function getProfile(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { register, login, getProfile };
+async function googleAuth(req, res, next) {
+  try {
+    const user = await authService.googleAuthUser(req.body);
+    sendTokenResponse(user, 200, res);
+  } catch (err) { next(err); }
+}
+
+module.exports = { register, login, getProfile, googleAuth };
