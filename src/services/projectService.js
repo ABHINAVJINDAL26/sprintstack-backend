@@ -3,6 +3,13 @@ const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 
 async function createProject(data, userId) {
+  const creator = await User.findById(userId).select('role');
+  if (!creator) throw new AppError('User not found', 404);
+
+  if (!['admin', 'manager'].includes(creator.role)) {
+    throw new AppError('Only admin or manager can create projects', 403);
+  }
+
   const project = await Project.create({ ...data, createdBy: userId, teamMembers: [userId] });
   return project;
 }
