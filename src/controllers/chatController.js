@@ -1,10 +1,38 @@
 const chatService = require('../services/chatService');
 const fs = require('fs/promises');
+const { cloudinary } = require('../config/cloudinary');
 
 async function cleanupUploadedFiles(files = []) {
-  await Promise.all(
-    files.map((file) => fs.unlink(file.path).catch(() => null))
-  );
+  await Promise.all(files.map(async (file) => {
+    const pathValue = file.path || '';
+
+    if (typeof pathValue === 'string' && pathValue.startsWith('http')) {
+      const publicId = file.filename;
+      if (!publicId) return;
+
+      const resourceTypes = ['image', 'video', 'raw'];
+      for (const resourceType of resourceTypes) {
+        try {
+          const result = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resourceType,
+            invalidate: true,
+          });
+
+          if (result?.result === 'ok' || result?.result === 'not found') {
+            break;
+          }
+        } catch {
+          // continue trying other resource types
+        }
+      }
+
+      return;
+    }
+
+    if (pathValue) {
+      await fs.unlink(pathValue).catch(() => null);
+    }
+  }));
 }
 
 async function getProjectMessages(req, res, next) {

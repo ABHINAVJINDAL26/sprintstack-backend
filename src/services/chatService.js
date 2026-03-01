@@ -12,10 +12,10 @@ function getAttachmentKind(mimeType = '') {
 function mapUploadedFilesToAttachments(files = []) {
   return files.map((file) => ({
     originalName: file.originalname,
-    fileName: file.filename,
+    fileName: file.filename || file.public_id || file.original_filename,
     mimeType: file.mimetype,
     size: file.size,
-    url: `/uploads/chats/${file.filename}`,
+    url: file.path || file.secure_url,
     kind: getAttachmentKind(file.mimetype),
   }));
 }

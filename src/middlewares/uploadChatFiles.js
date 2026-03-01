@@ -1,12 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const AppError = require('../utils/appError');
-
-const uploadDir = path.join(__dirname, '../../uploads/chats');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const { cloudinary, hasCloudinaryConfig } = require('../config/cloudinary');
 
 const allowedMimeTypes = new Set([
   'image/jpeg',
@@ -30,16 +25,28 @@ const allowedMimeTypes = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ]);
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${safeName}`);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: (_req, file) => {
+    const sanitizedOriginalName = file.originalname
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .slice(0, 80);
+
+    return {
+      folder: 'sprintstack/chats',
+      resource_type: 'auto',
+      public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}-${sanitizedOriginalName || 'file'}`,
+    };
   },
 });
 
 const fileFilter = (_req, file, cb) => {
+  if (!hasCloudinaryConfig) {
+    cb(new AppError('Cloudinary is not configured on server. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.', 500));
+    return;
+  }
+
   if (allowedMimeTypes.has(file.mimetype)) {
     cb(null, true);
     return;
