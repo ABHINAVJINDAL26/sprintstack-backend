@@ -34,6 +34,15 @@ const errorHandler = (err, req, res, next) => {
     message = 'Token expired. Please login again.';
   }
 
+  if (err.name === 'MulterError') {
+    statusCode = 400;
+    message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File too large. Maximum size is 20 MB per file.'
+      : err.code === 'LIMIT_FILE_COUNT'
+        ? 'Too many files. Maximum 5 attachments per message.'
+        : err.message;
+  }
+
   res.status(statusCode).json({
     success: false,
     message,

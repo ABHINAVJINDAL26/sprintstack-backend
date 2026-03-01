@@ -87,6 +87,9 @@ async function updateTask(taskId, data, userId, userRole) {
     if (task.assignedTo?.toString() !== userId.toString())
       throw new AppError('Developers can only update their own assigned tasks', 403);
     Object.keys(data).forEach((k) => { if (k !== 'status') delete data[k]; });
+    if (data.status === 'done') {
+      throw new AppError('Developers cannot move tasks to done. Send to review for QA.', 403);
+    }
   }
 
   // QA can only change status

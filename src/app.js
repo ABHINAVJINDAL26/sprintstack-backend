@@ -3,12 +3,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const morgan = require('morgan');
+const path = require('path');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const sprintRoutes = require('./routes/sprintRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -36,6 +38,7 @@ app.use(async (req, res, next) => {
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(mongoSanitize());
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Logging
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
@@ -50,6 +53,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/chats', chatRoutes);
 
 // 404 + Global error handler
 app.use(notFound);
