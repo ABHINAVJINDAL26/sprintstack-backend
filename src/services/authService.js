@@ -4,13 +4,29 @@ const { OAuth2Client } = require('google-auth-library');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function resolveSelfSignupRole(role) {
+  if (!role) return 'developer';
+
+  if (role === 'admin') {
+    throw new AppError('Admin role cannot be self-assigned. Contact an existing admin.', 403);
+  }
+
+  return role;
+}
+
 async function registerUser(payload) {
   const { name, email, password, role, organization } = payload;
 
   const existing = await User.findOne({ email });
   if (existing) throw new AppError('Email already registered', 409);
 
-  const user = await User.create({ name, email, password, role, organization });
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: resolveSelfSignupRole(role),
+    organization,
+  });
   return user;
 }
 
@@ -63,7 +79,7 @@ async function googleAuthUser(payload) {
       name,
       email,
       password: `${Math.random().toString(36).slice(-8)}Aa1!`,
-      role: role || 'developer',
+      role: resolveSelfSignupRole(role),
       organization,
     });
     return user;

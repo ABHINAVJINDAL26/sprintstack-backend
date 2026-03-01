@@ -15,7 +15,7 @@ async function createProject(data, userId) {
 }
 
 async function getAllProjects(userId, userRole) {
-  const query = userRole === 'admin' ? {} : { teamMembers: userId };
+  const query = { teamMembers: userId };
   return await Project.find(query)
     .populate('createdBy', 'name email')
     .populate('teamMembers', 'name email role')
@@ -30,7 +30,7 @@ async function getProjectById(projectId, userId, userRole) {
   if (!project) throw new AppError('Project not found', 404);
 
   const isMember = project.teamMembers.some((m) => m._id.toString() === userId.toString());
-  if (userRole !== 'admin' && !isMember) throw new AppError('You are not a member of this project', 403);
+  if (!isMember) throw new AppError('You are not a member of this project', 403);
 
   return project;
 }

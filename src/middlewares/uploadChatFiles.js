@@ -33,9 +33,15 @@ const storage = new CloudinaryStorage({
       .replace(/[^a-zA-Z0-9_-]/g, '_')
       .slice(0, 80);
 
+    const uploadResourceType = file.mimetype.startsWith('image/')
+      ? 'image'
+      : file.mimetype.startsWith('video/')
+        ? 'video'
+        : 'raw';
+
     return {
       folder: 'sprintstack/chats',
-      resource_type: 'auto',
+      resource_type: uploadResourceType,
       public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}-${sanitizedOriginalName || 'file'}`,
     };
   },

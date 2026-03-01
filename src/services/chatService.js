@@ -25,7 +25,7 @@ async function verifyMembership(projectId, userId, userRole) {
   if (!project) throw new AppError('Project not found', 404);
 
   const isMember = project.teamMembers.some((member) => member.toString() === userId.toString());
-  if (userRole !== 'admin' && !isMember) {
+  if (!isMember) {
     throw new AppError('You are not a member of this project', 403);
   }
 
