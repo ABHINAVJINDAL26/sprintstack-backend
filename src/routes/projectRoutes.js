@@ -8,6 +8,7 @@ const {
 const { protect } = require('../middlewares/authMiddleware');
 const { validateRequest } = require('../middlewares/validateRequest');
 const { validateObjectId } = require('../middlewares/validateObjectId');
+const { checkProjectAccess } = require('../middlewares/checkProjectAccess');
 
 router.use(protect);
 
@@ -17,17 +18,24 @@ router.post('/', [
 ], validateRequest, createProject);
 
 router.get('/', getAllProjects);
-router.get('/:id', validateObjectId('id'), getProjectById);
+router.get('/:id', validateObjectId('id'), checkProjectAccess('id'), getProjectById);
 
-router.put('/:id', [
-  body('name').optional().trim().notEmpty().withMessage('Project name cannot be empty'),
-  body('status').optional().isIn(['active', 'archived']).withMessage('Invalid status'),
-], validateObjectId('id'), validateRequest, updateProject);
+router.put(
+  '/:id',
+  [
+    body('name').optional().trim().notEmpty().withMessage('Project name cannot be empty'),
+    body('status').optional().isIn(['active', 'archived']).withMessage('Invalid status'),
+  ],
+  validateObjectId('id'),
+  checkProjectAccess('id'),
+  validateRequest,
+  updateProject
+);
 
-router.delete('/:id', validateObjectId('id'), deleteProject);
+router.delete('/:id', validateObjectId('id'), checkProjectAccess('id'), deleteProject);
 
 router.post('/:id/members', [
   body('email').isEmail().withMessage('Valid email is required'),
-], validateObjectId('id'), validateRequest, addTeamMember);
+], validateObjectId('id'), checkProjectAccess('id'), validateRequest, addTeamMember);
 
 module.exports = router;

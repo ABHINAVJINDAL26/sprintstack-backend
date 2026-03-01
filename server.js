@@ -54,7 +54,7 @@ const start = async () => {
         const project = await Project.findById(projectId).select('teamMembers');
         if (!project) throw new Error('Project not found');
 
-        const allowed = isProjectMember(project, socket.user._id);
+        const allowed = socket.user.role === 'admin' || isProjectMember(project, socket.user._id);
         if (!allowed) throw new Error('Not authorized for this project room');
 
         socket.join(`project:${projectId}`);

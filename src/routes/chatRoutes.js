@@ -4,17 +4,19 @@ const { protect } = require('../middlewares/authMiddleware');
 const { validateObjectId } = require('../middlewares/validateObjectId');
 const { validateRequest } = require('../middlewares/validateRequest');
 const { uploadChatFiles } = require('../middlewares/uploadChatFiles');
+const { checkProjectAccess } = require('../middlewares/checkProjectAccess');
 const { getProjectMessages, createProjectMessage } = require('../controllers/chatController');
 
 const router = express.Router();
 
 router.use(protect);
 
-router.get('/project/:projectId', validateObjectId('projectId'), getProjectMessages);
+router.get('/project/:projectId', validateObjectId('projectId'), checkProjectAccess('projectId'), getProjectMessages);
 
 router.post(
   '/project/:projectId/messages',
   validateObjectId('projectId'),
+  checkProjectAccess('projectId'),
   uploadChatFiles.array('attachments', 5),
   [
     body('message')
